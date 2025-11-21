@@ -1,5 +1,7 @@
 import re
-from typing import Optional, Dict, Any
+import logfire
+from loguru import logger
+from typing import Optional
 from .client import LLMClient
 from .registry import ToolRegistry
 
@@ -20,40 +22,38 @@ class LiquidAgent(SimpleBot):
     """An agent that can use tools defined in a ToolRegistry."""
     def __init__(self, model_name: str, registry: ToolRegistry, **client_opts):
         self.registry = registry
-        
-        # Dynamic System Prompt for LiquidAI
         agent_prompt = f"List of tools: <|tool_list_start|>{registry.get_tools_json()}<|tool_list_end|>"
-        
-        # Initialize parent
         super().__init__(model_name, system_prompt=agent_prompt, **client_opts)
 
     def chat(self, user_input: str) -> str:
-        # 1. Standard Chat Turn
-        self.history.append({"role": "user", "content": user_input})
-        initial_content = self.client.generate(self.history)
-        
-        # 2. Check for Tool Calls
-        tool_result = self._check_for_tools(initial_content)
-        
-        if tool_result:
-            print(f"⚙️ Executing Tool...") # Optional logging
+        # The PARENT span
+        with logfire.span("agent_turn", input=user_input):
             
-            # Add AI's intent to history
-            self.history.append({"role": "assistant", "content": initial_content})
+            self.history.append({"role": "user", "content": user_input})
             
-            # Specific format for LiquidAI Tool Responses
-            tool_msg = f"<|tool_response_start|>{tool_result}<|tool_response_end|>"
-            self.history.append({"role": "user", "content": tool_msg})
+            # 1. Initial generation
+            initial_content = self.client.generate(self.history)
             
-            # 3. Synthesis Turn
-            final_response = self.client.generate(self.history)
-            self.history.append({"role": "assistant", "content": final_response})
-            return final_response
+            # 2. Check Tools
+            tool_result = self._check_for_tools(initial_content)
             
-        else:
-            # No tool used, just add the normal response
-            self.history.append({"role": "assistant", "content": initial_content})
-            return initial_content
+            if tool_result:
+                self.history.append({"role": "assistant", "content": initial_content})
+                
+                tool_msg = f"<|tool_response_start|>{tool_result}<|tool_response_end|>"
+                self.history.append({"role": "user", "content": tool_msg})
+                
+                # 3. Final Synthesis
+                final_response = self.client.generate(self.history)
+                self.history.append({"role": "assistant", "content": final_response})
+                
+                logger.info(f"🤖 Answer: {final_response}")
+                return final_response
+            
+            else:
+                self.history.append({"role": "assistant", "content": initial_content})
+                logger.info(f"🤖 Answer: {initial_content}")
+                return initial_content
 
     def _check_for_tools(self, content: str) -> Optional[str]:
         pattern = r"<\|tool_call_start\|>\[(.*?)\]<\|tool_call_end\|>"

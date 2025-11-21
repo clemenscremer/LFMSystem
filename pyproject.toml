@@ -9,5 +9,6 @@ dependencies = [
     "pandas>=2.0.0",
     "click>=8.0.0",
     "loguru>=0.7.3",
+    "logfire[system-metrics]>=0.46.0",
     "pytest>=8.0.0"
 ]

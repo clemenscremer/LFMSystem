@@ -18,6 +18,7 @@ They will be stored under ~/.ollama/models/.
 - using mostly https://huggingface.co/LiquidAI/LFM2-8B-A1B in Q4_K_M version here
 - `ollama list` : lists all installed models
 - https://github.com/ollama/ollama-python
+- if online logging is desired log in with logfire use `uv run logfire auth` to login. Otherwise turn cloud based logging off via `setup_logging(use_cloud=False)`
 
 
 ## Structure
@@ -28,6 +29,7 @@ LFMSystem/
 ├── src/
 │   └── lfmsystem/        
 │       ├── __init__.py
+│       ├── logging.py    # sets up logging with logfire and loguru
 │       ├── client.py     # Handles Ollama & Model Settings
 │       ├── registry.py   # The Tool Manager
 │       ├── tools.py      # Tool definitions

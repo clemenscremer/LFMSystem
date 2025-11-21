@@ -1,6 +1,8 @@
-import inspect
+import logfire
+from loguru import logger
 import json
-from typing import Callable, Dict, List, Any
+import inspect
+from typing import Callable, Dict, List
 from pydantic import validate_call
 
 class ToolRegistry:
@@ -37,6 +39,9 @@ class ToolRegistry:
         }
         self.schemas.append(schema)
         
+        # Loguru info
+        logger.debug(f"Registered tool: {func.__name__}")    
+        
         return validate_call(func) # Add validation
 
     def get_tools_json(self) -> str:
@@ -44,10 +49,16 @@ class ToolRegistry:
         return json.dumps(self.schemas)
     
     def execute(self, tool_call_str: str) -> str:
-        """Executes the tool string safely."""
-        try:
-            # Restrict execution scope to registered tools only
-            result = eval(tool_call_str, {"__builtins__": None}, self.tools_map)
-            return str(result)
-        except Exception as e:
-            return f"Tool Execution Error: {e}"
+        # Create a span for the execution
+        with logfire.span("tool_execution", command=tool_call_str):
+            try:
+                logger.info(f"🔧 Executing: {tool_call_str}")
+                
+                # Safety check happens here, logfire catches pydantic errors automatically
+                result = eval(tool_call_str, {"__builtins__": None}, self.tools_map)
+                
+                logger.success(f"Result: {result}")
+                return str(result)
+            except Exception as e:
+                logger.error(f"Tool Failed: {e}")
+                return f"Tool Execution Error: {e}"
