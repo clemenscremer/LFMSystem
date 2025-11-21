@@ -12,3 +12,6 @@ dependencies = [
     "logfire[system-metrics]>=0.46.0",
     "pytest>=8.0.0"
 ]
+
+[project.scripts]
+lfmsystem = "lfmsystem.cli:main" 
