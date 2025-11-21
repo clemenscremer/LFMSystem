@@ -1,0 +1,47 @@
+# Local Liquid Foundation Models via Ollama
+
+## Requirements
+
+## Environment setup
+
+You will need
+
+- Python $\ge$ 3.12.
+- [Ollama](https://ollama.com), Or use Homebrew (on Mac)
+`brew install ollama` to serve the Language Models locally. 
+- [uv](https://docs.astral.sh/uv/) to manage Python dependencies and run the application efficiently without creating virtual environments manually.
+
+## Download models
+
+They will be stored under ~/.ollama/models/.
+
+- using mostly https://huggingface.co/LiquidAI/LFM2-8B-A1B in Q4_K_M version here
+- `ollama list` : lists all installed models
+- https://github.com/ollama/ollama-python
+
+
+## Structure
+
+```
+LFMSystem/
+├── pyproject.toml        # Dependencies and whatnot
+├── src/
+│   └── lfmsystem/        
+│       ├── __init__.py
+│       ├── client.py     # Handles Ollama & Model Settings
+│       ├── registry.py   # The Tool Manager
+│       ├── tools.py      # Tool definitions
+│       └── agent.py      # The Chatbot & Agent logic (This integrates the client and registry.)
+├── tests/
+│   ├── __init__.py
+│   ├── test_tools.py     # Testing your python functions
+│   └── test_agent.py     # Testing the bot logic (with mocks)
+└── notebooks/
+    └── playground.ipynb  # solely for illustration and testing
+```
+
+
+## Testing 
+
+- `uv run pytest`to run all tests
+- `uv run pytest tests/test_agent.py -v`to just run the agent logic (This proves that IF the Liquid model outputs the correct regex, your python code WILL catch it and handle the loop correctly. This isolates errors in your code from errors in the model's intelligence.)
